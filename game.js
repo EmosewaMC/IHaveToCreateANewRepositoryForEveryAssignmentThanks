@@ -52,7 +52,12 @@ class Level1 extends Phaser.Scene {
 		this.player = this.physics.add.image(100, 100, 'player').setGravityY(0).setMaxVelocity(1250, 1250).setVelocityY(1250);
 		this.player.setCollideWorldBounds(true, 0, 0, true);
 		// Now create a rectangular platform at the top left
-		this.platform = this.physics.add.image(200, 400, 'player').setMaxVelocity(0, 0).setImmovable(true);
+		this.platform = this.physics.add.image(200, 500, 'player').setMaxVelocity(0, 0).setImmovable(true);
+		this.platform2 = this.physics.add.image(600, 800, 'player').setMaxVelocity(0, 0).setImmovable(true);
+		this.physics.add.collider(this.player, this.platform);
+		this.physics.add.collider(this.player, this.platform2);
+		// If the player will move left or right into the platform, set the horizontal velocity to 0
+		// If the player will jump into the platform, set the vertical velocity to 0
 		this.jumpNum = 0;
 		// When a onWorldBounds event is triggered, set the boolean on this canJump to true
 		this.physics.world.on('worldbounds', () => {
@@ -63,13 +68,13 @@ class Level1 extends Phaser.Scene {
 		this.dKey = this.input.keyboard.addKey('D');
 		this.wKey.addListener('down', () => {
 			if (this.jumpNum < 2) {
-				this.player.body.setVelocityY(-1750);
-				this.player.setAccelerationY(5000);
+				this.player.body.setVelocityY(-3000);
+				this.player.setAccelerationY(4000);
 				this.jumpNum++;
 			}
 		}, this);
 		this.wKey.addListener('up', () => {
-			this.player.setAccelerationY(10000);
+			this.player.setAccelerationY(8000);
 		});
 	}
 
