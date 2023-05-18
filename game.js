@@ -34,6 +34,12 @@ class Intro extends Phaser.Scene {
 	}
 }
 
+function resetJumpIfOnTopOfObject(scene, player, object) {
+	if (Math.abs(player.body.bottom - object.body.top) < 10) {
+		scene.jumpNum = 0;
+	}
+}
+
 class Level1 extends Phaser.Scene {
 	constructor() {
 		super("level1Scene");
@@ -49,13 +55,17 @@ class Level1 extends Phaser.Scene {
 			FontFace: "bold",
 		}).setOrigin(0.5);
 		// Create a player which is just a circle
-		this.player = this.physics.add.image(100, 100, 'player').setGravityY(0).setMaxVelocity(1250, 1250).setVelocityY(1250);
+		this.player = this.physics.add.image(100, 100, 'player').setGravityY(0).setMaxVelocity(1250, 1250).setVelocityY(1250).setAccelerationY(4000);
 		this.player.setCollideWorldBounds(true, 0, 0, true);
 		// Now create a rectangular platform at the top left
 		this.platform = this.physics.add.image(200, 500, 'player').setMaxVelocity(0, 0).setImmovable(true);
 		this.platform2 = this.physics.add.image(600, 800, 'player').setMaxVelocity(0, 0).setImmovable(true);
-		this.physics.add.collider(this.player, this.platform);
-		this.physics.add.collider(this.player, this.platform2);
+		this.physics.add.collider(this.player, this.platform, () => {
+			resetJumpIfOnTopOfObject(this, this.player, this.platform);
+		});
+		this.physics.add.collider(this.player, this.platform2, () => {
+			resetJumpIfOnTopOfObject(this, this.player, this.platform2);
+		});
 		// If the player will move left or right into the platform, set the horizontal velocity to 0
 		// If the player will jump into the platform, set the vertical velocity to 0
 		this.jumpNum = 0;
@@ -86,6 +96,10 @@ class Level1 extends Phaser.Scene {
 		if (this.dKey.isDown){
 			vel += 600;
 		}
+		if (this.jumpNum == 0 && this.player.body.velocity.y > 1000) {
+			this.jumpNum = 1;
+		}
+
 		this.player.body.setVelocityX(vel);
 	}
 }
