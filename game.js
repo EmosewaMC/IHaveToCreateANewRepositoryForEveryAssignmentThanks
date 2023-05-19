@@ -32,6 +32,16 @@ class Intro extends Phaser.Scene {
 	}
 }
 
+function loadImages(scene) {
+	scene.load.image('player', './circle.png');
+	scene.load.image('platform', './platform.png');
+	scene.load.image('platformS', './smallPlatform.png');
+	scene.load.image('button', './button.png');
+	scene.load.image('doorL', './doorLocked.png');
+	scene.load.image('doorU', './doorUnlocked.png');
+	scene.load.image('buttonU', './ButtonU.png');
+}
+
 function run(scene) {
 	let vel = 0;
 
@@ -55,18 +65,20 @@ function resetJumpIfOnTopOfObject(scene, player, object) {
 }
 
 function initPlatforms(scene) {
-	scene.platform = scene.physics.add.image(200, 500, 'player').setMaxVelocity(0, 0).setImmovable(true);
-	scene.platform2 = scene.physics.add.image(600, 800, 'player').setMaxVelocity(0, 0).setImmovable(true);
-	scene.physics.add.collider(scene.player, scene.platform, () => {
-		resetJumpIfOnTopOfObject(scene, scene.player, scene.platform);
-	});
-	scene.physics.add.collider(scene.player, scene.platform2, () => {
-		resetJumpIfOnTopOfObject(scene, scene.player, scene.platform2);
-	});
+	scene.platforms = [];
+	scene.platforms[0] = scene.physics.add.image(-150, 300, 'platform').setMaxVelocity(0, 0).setImmovable(true);
+	scene.platforms[1] = scene.physics.add.image(960, 740, 'platform').setMaxVelocity(0, 0).setImmovable(true);
+	scene.platforms[2] = scene.physics.add.image(-400, 1020, 'platform').setMaxVelocity(0, 0).setImmovable(true);
+	scene.platforms[3] = scene.physics.add.image(760, 400, 'platformS').setMaxVelocity(0, 0).setImmovable(true);
+	for (let i = 0; i < scene.platforms.length; i++) {
+		scene.physics.add.collider(scene.player, scene.platforms[i], () => {
+			resetJumpIfOnTopOfObject(scene, scene.player, scene.platforms[i]);
+		});
+	}
 }
 
-function initDoor(scene, x, y) {
-	scene.doorPhantom = scene.add.image(x, y, 'player');
+function initDoor(scene, x, y, image = 'doorL') {
+	scene.doorPhantom = scene.add.image(x, y, image).setScale(1.5);
 }
 
 function initControls(scene) {
@@ -98,13 +110,15 @@ function initControls(scene) {
 	});
 }
 
-function initButton(scene, x, y) {
-	scene.button = scene.physics.add.staticImage(x, y, 'player');
+function initButton(scene, x, y, image = 'button') {
+	let t = scene.add.image(x, y, image).setScale(1.5);
+	scene.button = scene.physics.add.existing(t, true);
 	scene.physics.add.collider(scene.player, scene.button, () => {
 		scene.buttonIndex++;
 		if (scene.buttons == undefined || scene.buttons[scene.buttonIndex] == undefined) {
 			scene.button.destroy();
 			scene.doorUnlocked = true;
+			initDoor(scene, scene.doorPhantom.x, scene.doorPhantom.y, 'doorU');
 		} else {
 			scene.button.destroy();
 			initButton(scene, scene.buttons[scene.buttonIndex].x, scene.buttons[scene.buttonIndex].y);
@@ -114,7 +128,7 @@ function initButton(scene, x, y) {
 }
 
 function initPlayer(scene) {
-	scene.player = scene.physics.add.image(100, 100, 'player').setGravityY(0).setMaxVelocity(1250, 1250).setVelocityY(1250).setAccelerationY(4000);
+	scene.player = scene.physics.add.image(100, 100, 'player').setScale(2).setGravityY(0).setMaxVelocity(1250, 1250).setVelocityY(1250).setAccelerationY(4000);
 	scene.player.setCollideWorldBounds(true, 0, 0, true);
 }
 
@@ -123,8 +137,7 @@ class Level1 extends Phaser.Scene {
 		super("level1Scene");
 	}
 	preload() {
-		// Load in the background
-		this.load.image('player', './circle.png');
+		loadImages(this);
 	}
 
 	create() {
@@ -134,11 +147,10 @@ class Level1 extends Phaser.Scene {
 			font: "96px Georgia",
 			FontFace: "bold",
 		}).setOrigin(0.5);
-		// Create a player which is just a circle
 		initPlayer(this);
 		initPlatforms(this);
-		initDoor(this, 1800, 950);
-		initButton(this, 100, 1000);
+		initDoor(this, 1850, 1015);
+		initButton(this, 900, 1047);
 		initControls(this);
 	}
 
@@ -154,8 +166,7 @@ class Level2 extends Phaser.Scene {
 		super("level2Scene");
 	}
 	preload() {
-		// Load in the background
-		this.load.image('player', './circle.png');
+		loadImages(this);
 	}
 
 	create() {
@@ -165,12 +176,17 @@ class Level2 extends Phaser.Scene {
 			font: "96px Georgia",
 			FontFace: "bold",
 		}).setOrigin(0.5);
-		// Create a player which is just a circle
 		initPlayer(this);
 		initPlatforms(this);
-		initDoor(this, 100, 1000);
-		initButton(this, 1800, 950);
 		initControls(this);
+		this.button = this.physics.add.staticImage(1850, 1015, 'doorL').setScale(1.5);
+		this.physics.add.collider(this.player, this.button, () => {
+			this.button.destroy();
+			this.doorUnlocked = true;
+			this.doorPhantom.destroy();
+			this.doorPhantom = this.add.image(900, 1047, 'buttonU').setScale(1.5);
+		});
+		this.doorPhantom = this.add.image(900, 1047, 'button').setScale(1.5);
 	}
 
 	update() {
@@ -183,8 +199,7 @@ class Level3 extends Phaser.Scene {
 		super("level3Scene");
 	}
 	preload() {
-		// Load in the background
-		this.load.image('player', './circle.png');
+		loadImages(this);
 	}
 
 	create() {
@@ -193,26 +208,25 @@ class Level3 extends Phaser.Scene {
 		this.buttonIndex = 0;
 		this.buttons = [
 			{
+				x: 900,
+				y: 1047
+			},
+			{
+				x: 1350,
+				y: 640
+			},
+			{
 				x: 100,
-				y: 1000
-			},
-			{
-				x: 1000,
-				y: 100
-			},
-			{
-				x: 500,
-				y: 500
+				y: 200
 			},
 		]
 		this.add.text(960, 540, "Level 3", {
 			font: "96px Georgia",
 			FontFace: "bold",
 		}).setOrigin(0.5);
-		// Create a player which is just a circle
 		initPlayer(this);
 		initPlatforms(this);
-		initDoor(this, 1800, 950);
+		initDoor(this, 1850, 1015);
 		initButton(this, this.buttons[0].x, this.buttons[0].y);
 		initControls(this);
 	}
@@ -232,7 +246,6 @@ const game = new Phaser.Game({
 	physics: {
 		default: 'arcade',
 		arcade: {
-			debug: true,
 			gravity: {
 				x: 0,
 				y: 0
