@@ -29,15 +29,93 @@ class Intro extends Phaser.Scene {
 				}
 			});
 		});
-
-		console.log(this.title);
 	}
+}
+
+function run(scene) {
+	let vel = 0;
+
+	if (scene.aKey.isDown) {
+		vel -= 600;
+	}
+	if (scene.dKey.isDown) {
+		vel += 600;
+	}
+	if (scene.jumpNum == 0 && scene.player.body.velocity.y > 1000) {
+		scene.jumpNum = 1;
+	}
+
+	scene.player.body.setVelocityX(vel);
 }
 
 function resetJumpIfOnTopOfObject(scene, player, object) {
 	if (Math.abs(player.body.bottom - object.body.top) < 10) {
 		scene.jumpNum = 0;
 	}
+}
+
+function initPlatforms(scene) {
+	scene.platform = scene.physics.add.image(200, 500, 'player').setMaxVelocity(0, 0).setImmovable(true);
+	scene.platform2 = scene.physics.add.image(600, 800, 'player').setMaxVelocity(0, 0).setImmovable(true);
+	scene.physics.add.collider(scene.player, scene.platform, () => {
+		resetJumpIfOnTopOfObject(scene, scene.player, scene.platform);
+	});
+	scene.physics.add.collider(scene.player, scene.platform2, () => {
+		resetJumpIfOnTopOfObject(scene, scene.player, scene.platform2);
+	});
+}
+
+function initDoor(scene, x, y) {
+	scene.doorPhantom = scene.add.image(x, y, 'player');
+}
+
+function initControls(scene) {
+	scene.wKey = scene.input.keyboard.addKey('W');
+	scene.aKey = scene.input.keyboard.addKey('A');
+	scene.dKey = scene.input.keyboard.addKey('D');
+	scene.wKey.addListener('down', () => {
+		if (scene.doorUnlocked) {
+			// Check if the player is intersecting with the door
+			if (scene.wKey.isDown && Phaser.Geom.Intersects.RectangleToRectangle(scene.player.getBounds(), scene.doorPhantom.getBounds()) && scene.jumpNum == 0) {
+				scene.scene.start(scene.nextScene);
+			}
+		}
+		if (scene.jumpNum < 2) {
+			scene.player.body.setVelocityY(-3000);
+			scene.player.setAccelerationY(4000);
+			scene.jumpNum++;
+		}
+	}, scene);
+	scene.wKey.addListener('up', () => {
+		scene.player.setAccelerationY(8000);
+	});
+	// If the player will move left or right into the platform, set the horizontal velocity to 0
+	// If the player will jump into the platform, set the vertical velocity to 0
+	scene.jumpNum = 0;
+	// When a onWorldBounds event is triggered, set the boolean on this canJump to true
+	scene.physics.world.on('worldbounds', () => {
+		if (scene.jumpNum > 0) scene.jumpNum = 0;
+	});
+}
+
+function initButton(scene, x, y) {
+	scene.button = scene.physics.add.staticImage(x, y, 'player');
+	scene.physics.add.collider(scene.player, scene.button, () => {
+		scene.buttonIndex++;
+		if (scene.buttons == undefined || scene.buttons[scene.buttonIndex] == undefined) {
+			scene.button.destroy();
+			scene.doorUnlocked = true;
+		} else {
+			scene.button.destroy();
+			initButton(scene, scene.buttons[scene.buttonIndex].x, scene.buttons[scene.buttonIndex].y);
+			// also set rotation here for the button at some point
+		}
+	});
+}
+
+function initPlayer(scene) {
+	scene.player = scene.physics.add.image(100, 100, 'player').setGravityY(0).setMaxVelocity(1250, 1250).setVelocityY(1250).setAccelerationY(4000);
+	scene.player.setCollideWorldBounds(true, 0, 0, true);
 }
 
 class Level1 extends Phaser.Scene {
@@ -50,57 +128,97 @@ class Level1 extends Phaser.Scene {
 	}
 
 	create() {
+		this.doorUnlocked = false;
+		this.nextScene = "level2Scene";
 		this.add.text(960, 540, "Level 1", {
 			font: "96px Georgia",
 			FontFace: "bold",
 		}).setOrigin(0.5);
 		// Create a player which is just a circle
-		this.player = this.physics.add.image(100, 100, 'player').setGravityY(0).setMaxVelocity(1250, 1250).setVelocityY(1250).setAccelerationY(4000);
-		this.player.setCollideWorldBounds(true, 0, 0, true);
-		// Now create a rectangular platform at the top left
-		this.platform = this.physics.add.image(200, 500, 'player').setMaxVelocity(0, 0).setImmovable(true);
-		this.platform2 = this.physics.add.image(600, 800, 'player').setMaxVelocity(0, 0).setImmovable(true);
-		this.physics.add.collider(this.player, this.platform, () => {
-			resetJumpIfOnTopOfObject(this, this.player, this.platform);
-		});
-		this.physics.add.collider(this.player, this.platform2, () => {
-			resetJumpIfOnTopOfObject(this, this.player, this.platform2);
-		});
-		// If the player will move left or right into the platform, set the horizontal velocity to 0
-		// If the player will jump into the platform, set the vertical velocity to 0
-		this.jumpNum = 0;
-		// When a onWorldBounds event is triggered, set the boolean on this canJump to true
-		this.physics.world.on('worldbounds', () => {
-			if (this.jumpNum > 0) this.jumpNum = 0;
-		});
-		this.wKey = this.input.keyboard.addKey('W');
-		this.aKey = this.input.keyboard.addKey('A');
-		this.dKey = this.input.keyboard.addKey('D');
-		this.wKey.addListener('down', () => {
-			if (this.jumpNum < 2) {
-				this.player.body.setVelocityY(-3000);
-				this.player.setAccelerationY(4000);
-				this.jumpNum++;
-			}
-		}, this);
-		this.wKey.addListener('up', () => {
-			this.player.setAccelerationY(8000);
-		});
+		initPlayer(this);
+		initPlatforms(this);
+		initDoor(this, 1800, 950);
+		initButton(this, 100, 1000);
+		initControls(this);
 	}
 
 	update() {
-		let vel = 0;
-		if (this.aKey.isDown){
-			vel -= 600;
-		}
-		if (this.dKey.isDown){
-			vel += 600;
-		}
-		if (this.jumpNum == 0 && this.player.body.velocity.y > 1000) {
-			this.jumpNum = 1;
-		}
+		run(this);
+	}
+}
 
-		this.player.body.setVelocityX(vel);
+// Create level 2 the same way as level 1 except instead of stepping on the button, you need to step on the door and exit through the button
+
+class Level2 extends Phaser.Scene {
+	constructor() {
+		super("level2Scene");
+	}
+	preload() {
+		// Load in the background
+		this.load.image('player', './circle.png');
+	}
+
+	create() {
+		this.doorUnlocked = false;
+		this.nextScene = "level3Scene";
+		this.add.text(960, 540, "Level 2", {
+			font: "96px Georgia",
+			FontFace: "bold",
+		}).setOrigin(0.5);
+		// Create a player which is just a circle
+		initPlayer(this);
+		initPlatforms(this);
+		initDoor(this, 100, 1000);
+		initButton(this, 1800, 950);
+		initControls(this);
+	}
+
+	update() {
+		run(this);
+	}
+}
+
+class Level3 extends Phaser.Scene {
+	constructor() {
+		super("level3Scene");
+	}
+	preload() {
+		// Load in the background
+		this.load.image('player', './circle.png');
+	}
+
+	create() {
+		this.doorUnlocked = false;
+		this.nextScene = "introScene";
+		this.buttonIndex = 0;
+		this.buttons = [
+			{
+				x: 100,
+				y: 1000
+			},
+			{
+				x: 1000,
+				y: 100
+			},
+			{
+				x: 500,
+				y: 500
+			},
+		]
+		this.add.text(960, 540, "Level 3", {
+			font: "96px Georgia",
+			FontFace: "bold",
+		}).setOrigin(0.5);
+		// Create a player which is just a circle
+		initPlayer(this);
+		initPlatforms(this);
+		initDoor(this, 1800, 950);
+		initButton(this, 100, 1000);
+		initControls(this);
+	}
+
+	update() {
+		run(this);
 	}
 }
 
@@ -121,6 +239,6 @@ const game = new Phaser.Game({
 			}
 		}
 	},
-	scene: [/*Intro,*/ Level1],
+	scene: [Intro, Level1, Level2, Level3],
 	title: "Just push the button",
 });
