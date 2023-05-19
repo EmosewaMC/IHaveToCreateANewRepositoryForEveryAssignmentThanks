@@ -213,7 +213,7 @@ class Level3 extends Phaser.Scene {
 		initPlayer(this);
 		initPlatforms(this);
 		initDoor(this, 1800, 950);
-		initButton(this, 100, 1000);
+		initButton(this, this.buttons[0].x, this.buttons[0].y);
 		initControls(this);
 	}
 
