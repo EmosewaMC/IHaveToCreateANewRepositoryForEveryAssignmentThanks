@@ -15,6 +15,8 @@ class Intro extends Phaser.Scene {
 		}).setOrigin(0.5).setAlpha(1);
 
 		this.input.on('pointerdown', () => {
+			if (this.started) return;
+			this.started = true;
 			this.tweens.add({
 				targets: this.title,
 				alpha: 1,
@@ -106,7 +108,7 @@ function initControls(scene) {
 	scene.jumpNum = 0;
 	// When a onWorldBounds event is triggered, set the boolean on this canJump to true
 	scene.physics.world.on('worldbounds', () => {
-		if (scene.jumpNum > 0) scene.jumpNum = 0;
+		if (scene.jumpNum > 0 && 1080 - scene.player.body.position.y < 100) scene.jumpNum = 0;
 	});
 }
 
