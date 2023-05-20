@@ -162,7 +162,7 @@ class Level1 extends Phaser.Scene {
 	create() {
 		this.doorUnlocked = false;
 		this.nextScene = "level2Scene";
-		this.add.text(960, 540, "Level 1", {
+		this.add.text(960, 540, "Just push the button", {
 			font: "96px Georgia",
 			FontFace: "bold",
 		}).setOrigin(0.5);
@@ -192,7 +192,7 @@ class Level2 extends Phaser.Scene {
 	create(data) {
 		this.doorUnlocked = false;
 		this.nextScene = "level3Scene";
-		this.add.text(960, 540, "Level 2", {
+		this.add.text(960, 540, "Trying other things", {
 			font: "96px Georgia",
 			FontFace: "bold",
 		}).setOrigin(0.5);
@@ -241,7 +241,7 @@ class Level3 extends Phaser.Scene {
 				y: 200
 			},
 		]
-		this.add.text(960, 540, "Level 3", {
+		this.add.text(960, 540, "Get back here!", {
 			font: "96px Georgia",
 			FontFace: "bold",
 		}).setOrigin(0.5);
