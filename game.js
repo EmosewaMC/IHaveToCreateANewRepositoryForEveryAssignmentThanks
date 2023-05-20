@@ -44,8 +44,23 @@ function loadImages(scene) {
 	scene.load.image('buttonU', './ButtonU.png');
 }
 
-function run(scene) {
+function run(scene, time, delta) {
 	let vel = 0;
+	scene.totalTime += delta;
+	if (scene.timer == undefined) {
+		scene.timerText = scene.add.text(50, 50, (scene.totalTime / 1000).toFixed(2), {
+			font: "32px Georgia",
+			FontFace: "bold",
+		}).setOrigin(0.5);
+
+		scene.timer = scene.time.addEvent({
+			delay: 10,
+			callback: () => {
+				scene.timerText.setText((scene.totalTime / 1000).toFixed(1));
+			},
+			loop: true
+		});
+	}
 
 	if (scene.aKey.isDown) {
 		vel -= 600;
@@ -91,7 +106,9 @@ function initControls(scene) {
 		if (scene.doorUnlocked) {
 			// Check if the player is intersecting with the door
 			if (scene.wKey.isDown && Phaser.Geom.Intersects.RectangleToRectangle(scene.player.getBounds(), scene.doorPhantom.getBounds()) && scene.jumpNum == 0) {
-				scene.scene.start(scene.nextScene);
+				scene.scene.start(scene.nextScene, {
+					time: scene.totalTime
+				});
 			}
 		}
 		if (scene.jumpNum < 2) {
@@ -149,6 +166,7 @@ class Level1 extends Phaser.Scene {
 			font: "96px Georgia",
 			FontFace: "bold",
 		}).setOrigin(0.5);
+		this.totalTime = 0;
 		initPlayer(this);
 		initPlatforms(this);
 		initDoor(this, 1850, 1015);
@@ -156,8 +174,8 @@ class Level1 extends Phaser.Scene {
 		initControls(this);
 	}
 
-	update() {
-		run(this);
+	update(time, delta) {
+		run(this, time, delta);
 	}
 }
 
@@ -171,7 +189,7 @@ class Level2 extends Phaser.Scene {
 		loadImages(this);
 	}
 
-	create() {
+	create(data) {
 		this.doorUnlocked = false;
 		this.nextScene = "level3Scene";
 		this.add.text(960, 540, "Level 2", {
@@ -182,6 +200,7 @@ class Level2 extends Phaser.Scene {
 		initPlatforms(this);
 		initControls(this);
 		this.button = this.physics.add.staticImage(1850, 1015, 'doorL').setScale(1.5);
+		this.totalTime = data.time;
 		this.physics.add.collider(this.player, this.button, () => {
 			this.button.destroy();
 			this.doorUnlocked = true;
@@ -191,8 +210,8 @@ class Level2 extends Phaser.Scene {
 		this.doorPhantom = this.add.image(900, 1047, 'button').setScale(1.5);
 	}
 
-	update() {
-		run(this);
+	update(time, delta) {
+		run(this, time, delta);
 	}
 }
 
@@ -204,9 +223,9 @@ class Level3 extends Phaser.Scene {
 		loadImages(this);
 	}
 
-	create() {
+	create(data) {
 		this.doorUnlocked = false;
-		this.nextScene = "introScene";
+		this.nextScene = "endScene";
 		this.buttonIndex = 0;
 		this.buttons = [
 			{
@@ -226,6 +245,7 @@ class Level3 extends Phaser.Scene {
 			font: "96px Georgia",
 			FontFace: "bold",
 		}).setOrigin(0.5);
+		this.totalTime = data.time;
 		initPlayer(this);
 		initPlatforms(this);
 		initDoor(this, 1850, 1015);
@@ -233,8 +253,35 @@ class Level3 extends Phaser.Scene {
 		initControls(this);
 	}
 
-	update() {
-		run(this);
+	update(time, delta) {
+		run(this, time, delta);
+	}
+}
+
+class End extends Phaser.Scene {
+	constructor() {
+		super("endScene");
+	}
+	preload() {
+		loadImages(this);
+	}
+
+	create(data) {
+		this.add.text(960, 540, "You win!", {
+			font: "96px Georgia",
+			FontFace: "bold",
+		}).setOrigin(0.5);
+		this.add.text(960, 640, "Thanks for playing!\n    Your time:" + (data.time / 1000).toFixed(1), {
+			font: "48px Georgia",
+			FontFace: "bold",
+		}).setOrigin(0.5);
+		this.add.text(960, 740, "Made by: David Markowitz", {
+			font: "48px Georgia",
+			FontFace: "bold",
+		}).setOrigin(0.5);
+		this.input.keyboard.on('keydown', () => {
+			this.scene.start("introScene");
+		});
 	}
 }
 
@@ -254,6 +301,6 @@ const game = new Phaser.Game({
 			}
 		}
 	},
-	scene: [Intro, Level1, Level2, Level3],
+	scene: [Intro, Level1, Level2, Level3, End],
 	title: "Just push the button",
 });
